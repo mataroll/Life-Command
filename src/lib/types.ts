@@ -26,6 +26,14 @@ export interface LifeNode {
   streak?: number               // current streak count
   category?: string             // e.g. "health", "finance", "home"
   createdAt: number             // timestamp
+
+  // Rich content fields
+  people?: string[]             // who's involved — e.g. ["אבא", "עמית"]
+  location?: string             // where — e.g. "חיפה", "הכותל"
+  deadline?: string             // target date — e.g. "2026-04-01"
+  links?: string[]              // URLs — purchase links, references, docs
+  files?: string[]              // attached file paths or PDF names
+  notes?: string                // free-text context, thoughts, why it matters
 }
 
 // === DAILY LOGS ===

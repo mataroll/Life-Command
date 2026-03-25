@@ -32,7 +32,7 @@ functions/index.js    — Cloud Functions: hourly push, morning summary, daily l
 ```
 
 ## Data Model
-- **LifeNode** — id, name, type (task/dream/purchase/metric), status, dependencies[], rhythm, priority, streak, category, moneyRequired
+- **LifeNode** — id, name, type (task/dream/purchase/metric), status, dependencies[], rhythm, priority, streak, category, moneyRequired, people[], location, deadline, links[], files[], notes
 - **DailyLog** — date (8am-8am boundary), tasks[], score
 - **WeeklyLog** — weekStart, weeklyTasks[], dailyScores[], score
 - **Finance** — balance, safetyBuffer

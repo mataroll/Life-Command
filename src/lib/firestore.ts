@@ -1,6 +1,6 @@
 import {
   collection, doc, getDocs, setDoc, onSnapshot,
-  query, orderBy, type Unsubscribe,
+  query, type Unsubscribe,
 } from 'firebase/firestore'
 import { db } from './firebase'
 import type { LifeNode, DailyLog, WeeklyLog, Finance } from './types'
@@ -11,15 +11,41 @@ const dailyLogsCol = collection(db, 'dailyLogs')
 const weeklyLogsCol = collection(db, 'weeklyLogs')
 const financeCol = collection(db, 'finance')
 
+// Normalize node data from Firestore (handles both field naming conventions)
+function normalizeNode(id: string, data: Record<string, any>): LifeNode {
+  return {
+    id,
+    name: data.name || '',
+    type: data.type || 'task',
+    status: data.status || 'open',
+    dependencies: data.dependencies || data.entryConditions || [],
+    rhythm: data.rhythm || 'one-time',
+    suggestedTime: data.suggestedTime || undefined,
+    progressType: data.progressType || 'checkbox',
+    moneyRequired: data.moneyRequired || undefined,
+    purchaseLink: data.purchaseLink || undefined,
+    priority: data.priority ?? data.order ?? 99,
+    streak: data.streak ?? data.currentStreak ?? undefined,
+    category: data.category || undefined,
+    attachments: data.attachments || undefined,
+    createdAt: data.createdAt?.toMillis?.() || data.createdAt || Date.now(),
+  }
+}
+
 // === NODES ===
 export async function getAllNodes(): Promise<LifeNode[]> {
-  const snap = await getDocs(query(nodesCol, orderBy('priority')))
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as LifeNode))
+  const snap = await getDocs(query(nodesCol))
+  return snap.docs
+    .map(d => normalizeNode(d.id, d.data()))
+    .sort((a, b) => a.priority - b.priority)
 }
 
 export function onNodesChange(cb: (nodes: LifeNode[]) => void): Unsubscribe {
-  return onSnapshot(query(nodesCol, orderBy('priority')), (snap) => {
-    cb(snap.docs.map(d => ({ id: d.id, ...d.data() } as LifeNode)))
+  return onSnapshot(query(nodesCol), (snap) => {
+    const nodes = snap.docs
+      .map(d => normalizeNode(d.id, d.data()))
+      .sort((a, b) => a.priority - b.priority)
+    cb(nodes)
   })
 }
 

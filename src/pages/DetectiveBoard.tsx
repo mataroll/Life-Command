@@ -196,8 +196,8 @@ export default function DetectiveBoard() {
 
   // Pan & zoom state
   const [pan, setPan] = useState({ x: 0, y: 0 })
-  const [scale, setScale] = useState(1)
-  const [fitted, setFitted] = useState(false)
+  const [scale, setScale] = useState(0.15)
+  const [ready, setReady] = useState(false)
   const dragRef = useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(null)
   const pinchRef = useRef<{ dist: number; scale: number } | null>(null)
 
@@ -206,27 +206,30 @@ export default function DetectiveBoard() {
     return unsub
   }, [])
 
-  // Auto-fit: measure container and scale board to fit, centered
+  // Auto-fit on mount + window resize
+  const doFit = useCallback(() => {
+    const el = containerRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    if (rect.width === 0 || rect.height === 0) return
+    const padding = 20
+    const scaleX = (rect.width - padding * 2) / CANVAS_W
+    const scaleY = (rect.height - padding * 2) / CANVAS_H
+    const fitScale = Math.min(scaleX, scaleY)
+    const fitX = (rect.width - CANVAS_W * fitScale) / 2
+    const fitY = (rect.height - CANVAS_H * fitScale) / 2
+    setScale(fitScale)
+    setPan({ x: fitX, y: fitY })
+    setReady(true)
+  }, [])
+
   useEffect(() => {
-    if (fitted) return
-    // Delay to ensure layout is ready (especially on mobile)
-    const timer = setTimeout(() => {
-      const el = containerRef.current
-      if (!el) return
-      const rect = el.getBoundingClientRect()
-      if (rect.width === 0 || rect.height === 0) return
-      const padding = 30
-      const scaleX = (rect.width - padding * 2) / CANVAS_W
-      const scaleY = (rect.height - padding * 2) / CANVAS_H
-      const fitScale = Math.min(scaleX, scaleY)
-      const fitX = (rect.width - CANVAS_W * fitScale) / 2
-      const fitY = (rect.height - CANVAS_H * fitScale) / 2
-      setScale(fitScale)
-      setPan({ x: fitX, y: fitY })
-      setFitted(true)
-    }, 100)
-    return () => clearTimeout(timer)
-  }, [fitted])
+    // Try immediately, then retry after a short delay for mobile
+    doFit()
+    const t1 = setTimeout(doFit, 150)
+    const t2 = setTimeout(doFit, 500)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+  }, [doFit])
 
   // Merge Firestore status
   const mergedNodes = BOARD_NODES.map(bn => {
@@ -298,7 +301,7 @@ export default function DetectiveBoard() {
       <div className="board-zoom-controls">
         <button onClick={() => setScale(s => Math.min(1.5, s + 0.1))}>+</button>
         <button onClick={() => setScale(s => Math.max(0.15, s - 0.1))}>-</button>
-        <button onClick={() => setFitted(false)}>R</button>
+        <button onClick={doFit}>R</button>
       </div>
 
       {/* Canvas */}
@@ -320,6 +323,8 @@ export default function DetectiveBoard() {
             height: CANVAS_H,
             transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
             transformOrigin: '0 0',
+            opacity: ready ? 1 : 0,
+            transition: ready ? 'opacity 0.3s' : 'none',
           }}
         >
           {/* SVG strings layer */}

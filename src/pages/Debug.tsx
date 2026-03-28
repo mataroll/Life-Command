@@ -1,31 +1,16 @@
 import { useState, useEffect } from 'react'
 import { onNodesChange, onFinanceChange } from '../lib/firestore'
-import { seedAll } from '../lib/seed'
 import type { LifeNode, Finance } from '../lib/types'
 
 export default function Debug() {
   const [nodes, setNodes] = useState<LifeNode[]>([])
   const [finance, setFinance] = useState<Finance | null>(null)
-  const [seeding, setSeeding] = useState(false)
-  const [seeded, setSeeded] = useState(false)
 
   useEffect(() => {
     const unsub1 = onNodesChange(setNodes)
     const unsub2 = onFinanceChange(setFinance)
     return () => { unsub1(); unsub2() }
   }, [])
-
-  async function handleSeed() {
-    setSeeding(true)
-    try {
-      await seedAll()
-      setSeeded(true)
-    } catch (e) {
-      console.error('Seed failed:', e)
-      alert('Seed failed — check console')
-    }
-    setSeeding(false)
-  }
 
   const statusColor: Record<string, string> = {
     'blocked': '#888',
@@ -38,15 +23,6 @@ export default function Debug() {
     <div className="page">
       <h2 className="page-title">Debug View</h2>
       <p className="page-subtitle">Firestore data — live</p>
-
-      <button
-        className="notif-btn"
-        onClick={handleSeed}
-        disabled={seeding}
-        style={{ marginBottom: 24, opacity: seeding ? 0.5 : 1 }}
-      >
-        {seeding ? 'טוען...' : seeded ? 'נטען בהצלחה!' : 'טען נתוני דוגמה'}
-      </button>
 
       {/* Finance */}
       {finance && (

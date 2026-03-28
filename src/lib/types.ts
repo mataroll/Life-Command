@@ -5,6 +5,18 @@ export type NodeStatus = 'blocked' | 'open' | 'in-progress' | 'done'
 export type ProgressType = 'checkbox' | 'streak' | 'savings'
 export type Rhythm = 'daily' | 'weekly' | 'one-time'
 
+// === ATTACHMENTS ===
+export type AttachmentType = 'link' | 'pdf' | 'image' | 'file'
+
+export interface Attachment {
+  id: string
+  type: AttachmentType
+  url: string               // web URL or Firebase Storage URL
+  name: string              // display name
+  thumbnail?: string        // preview image URL (for PDFs/images)
+  addedAt: number
+}
+
 export interface DependencyCondition {
   nodeId: string
   type: 'completion' | 'streak-threshold' | 'balance-threshold'
@@ -25,6 +37,7 @@ export interface LifeNode {
   priority: number              // lower = higher priority
   streak?: number               // current streak count
   category?: string             // e.g. "health", "finance", "home"
+  attachments?: Attachment[]    // links, PDFs, images, files
   createdAt: number             // timestamp
 
   // Rich content fields

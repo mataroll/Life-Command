@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app'
 import { getFirestore, enableMultiTabIndexedDbPersistence } from 'firebase/firestore'
+import { getStorage } from 'firebase/storage'
 
 const firebaseConfig = {
   apiKey: "AIzaSyDVUOqREqQGjXmZgqPQjcTTM6j-yIQLBtQ",
@@ -13,6 +14,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig)
 export const db = getFirestore(app)
+export const storage = getStorage(app)
 
 // Enable offline persistence
 enableMultiTabIndexedDbPersistence(db).catch((err) => {

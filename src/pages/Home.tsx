@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import ActivityRings from '../components/ActivityRings'
-import { onDailyLogChange, onWeeklyLogChange, setDailyLog } from '../lib/firestore'
+import TaskDetail from '../components/TaskDetail'
+import { onDailyLogChange, onWeeklyLogChange, setDailyLog, onNodesChange } from '../lib/firestore'
 import { registerPushSubscription, sendLocalStatusNotification, getPushStatus } from '../lib/push'
-import type { DailyLog, WeeklyLog } from '../lib/types'
+import type { DailyLog, WeeklyLog, LifeNode } from '../lib/types'
 
 type NotifStatus = 'idle' | 'granted' | 'denied' | 'unsupported' | 'not-standalone' | 'loading'
 
@@ -22,24 +23,28 @@ function getWeekId(): string {
 export default function Home() {
   const [dailyLog, setDailyLogState] = useState<DailyLog | null>(null)
   const [weeklyLog, setWeeklyLogState] = useState<WeeklyLog | null>(null)
+  const [nodes, setNodes] = useState<LifeNode[]>([])
   const [notifStatus, setNotifStatus] = useState<NotifStatus>('idle')
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
 
   useEffect(() => {
     const unsub1 = onDailyLogChange(getTodayId(), setDailyLogState)
     const unsub2 = onWeeklyLogChange(getWeekId(), setWeeklyLogState)
+    const unsub3 = onNodesChange(setNodes)
 
-    // Check existing notification permission
     getPushStatus().then(s => {
       if (s === 'granted') setNotifStatus('granted')
     })
 
-    return () => { unsub1(); unsub2() }
+    return () => { unsub1(); unsub2(); unsub3() }
   }, [])
 
   const completed = dailyLog?.tasks.filter(t => t.checked).length ?? 0
   const total = dailyLog?.tasks.length ?? 0
   const dailyPercent = total > 0 ? Math.round((completed / total) * 100) : 0
   const weeklyPercent = weeklyLog?.score ?? 0
+
+  const selectedNode = nodes.find(n => n.id === selectedNodeId) || null
 
   async function handleCheckTask(index: number) {
     if (!dailyLog) return
@@ -53,7 +58,6 @@ export default function Home() {
     updated.score = Math.round((newCompleted / updated.tasks.length) * 100)
     await setDailyLog(updated)
 
-    // Update the "live activity" notification
     if (Notification.permission === 'granted') {
       sendLocalStatusNotification(newCompleted, updated.tasks.length, 3, weeklyPercent)
     }
@@ -63,6 +67,11 @@ export default function Home() {
     setNotifStatus('loading')
     const result = await registerPushSubscription()
     setNotifStatus(result)
+  }
+
+  function getAttachmentCount(nodeId: string): number {
+    const node = nodes.find(n => n.id === nodeId)
+    return node?.attachments?.length || 0
   }
 
   return (
@@ -90,14 +99,23 @@ export default function Home() {
         <div className="task-list">
           <h3 className="section-title">משימות היום</h3>
           {dailyLog.tasks.map((task, i) => (
-            <button
-              key={task.nodeId}
-              className={`task-item ${task.checked ? 'checked' : ''}`}
-              onClick={() => handleCheckTask(i)}
-            >
-              <span className="task-check">{task.checked ? '✓' : '○'}</span>
-              <span className="task-name">{task.name}</span>
-            </button>
+            <div key={task.nodeId} className={`task-item ${task.checked ? 'checked' : ''}`}>
+              <button
+                className="task-check-area"
+                onClick={() => handleCheckTask(i)}
+              >
+                <span className="task-check">{task.checked ? '✓' : '○'}</span>
+                <span className="task-name">{task.name}</span>
+              </button>
+              <button
+                className="task-info-btn"
+                onClick={() => setSelectedNodeId(task.nodeId)}
+              >
+                {getAttachmentCount(task.nodeId) > 0
+                  ? `📎${getAttachmentCount(task.nodeId)}`
+                  : 'ⓘ'}
+              </button>
+            </div>
           ))}
         </div>
       )}
@@ -108,8 +126,18 @@ export default function Home() {
           <h3 className="section-title">משימות שבועיות</h3>
           {weeklyLog.weeklyTasks.map((task) => (
             <div key={task.nodeId} className={`task-item ${task.checked ? 'checked' : ''}`}>
-              <span className="task-check">{task.checked ? '✓' : '○'}</span>
-              <span className="task-name">{task.name}</span>
+              <div className="task-check-area">
+                <span className="task-check">{task.checked ? '✓' : '○'}</span>
+                <span className="task-name">{task.name}</span>
+              </div>
+              <button
+                className="task-info-btn"
+                onClick={() => setSelectedNodeId(task.nodeId)}
+              >
+                {getAttachmentCount(task.nodeId) > 0
+                  ? `📎${getAttachmentCount(task.nodeId)}`
+                  : 'ⓘ'}
+              </button>
             </div>
           ))}
         </div>
@@ -138,6 +166,11 @@ export default function Home() {
           <p className="notif-msg error">יש להוסיף למסך הבית קודם! Share → Add to Home Screen</p>
         )}
       </div>
+
+      {/* Task detail drawer */}
+      {selectedNode && (
+        <TaskDetail node={selectedNode} onClose={() => setSelectedNodeId(null)} />
+      )}
     </div>
   )
 }

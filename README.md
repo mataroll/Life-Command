@@ -1,50 +1,30 @@
-# React + TypeScript + Vite
+# Life Command Center
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> 🚧 **Work in progress.** The home screen (activity rings and daily checklist) works. The dependency board and purchase queue are still being built.
 
-Currently, two official plugins are available:
+An installable app (PWA) for managing your life, where every goal, task, dream and purchase is a **connected node**.
+Tasks don't unlock by date. They unlock by **conditions**: other tasks completed, streaks reached, money saved.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+> *"The date doesn't open the task. The conditions do."*
 
-## Expanding the ESLint configuration
+## Tech stack
+- **React 18 + TypeScript + Vite**
+- **Firebase:** Firestore with real-time listeners, Cloud Functions, Hosting
+- **PWA:** installable on the iPhone home screen, with push notifications
+- Dark mode, right-to-left Hebrew layout, sidebar navigation
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+## What's built
+- Home screen with Apple Watch-style SVG activity rings and a daily task checklist
+- Firestore data layer (typed `LifeNode`, daily and weekly logs, finance) with real-time sync
+- Push notification registration and local status notifications
 
-- Configure the top-level `parserOptions` property like this:
+## Roadmap
+- Detective board: a visual graph of how tasks depend on each other
+- Purchase queue tied to savings goals
+- Authentication (single user in the MVP)
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
-
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
-
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
-
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+## Run locally
+```bash
+npm install
+npm run dev
 ```
